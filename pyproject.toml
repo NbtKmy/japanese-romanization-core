@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "japanese-romanization-core"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mecab-python3>=1.0.12",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/romanizer_core"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
