@@ -71,3 +71,32 @@ def test_analyze_marks_out_of_vocabulary_words_as_unknown(dictionary_path):
     unknown_surfaces = {t.surface for t in result.tokens if t.is_unknown}
     assert "Python" in unknown_surfaces
     assert "MeCab" in unknown_surfaces
+
+
+def test_analyze_empty_string_returns_no_tokens(dictionary_path):
+    analyzer = _build_analyzer(dictionary_path)
+
+    result = analyzer.analyze("")
+
+    assert result.text == ""
+    assert result.tokens == ()
+
+
+def test_analyze_whitespace_only_preserves_text(dictionary_path):
+    analyzer = _build_analyzer(dictionary_path)
+
+    result = analyzer.analyze("   ")
+
+    assert result.text == "   "
+
+
+def test_analyze_repeated_surface_resolves_distinct_spans(dictionary_path):
+    analyzer = _build_analyzer(dictionary_path)
+
+    result = analyzer.analyze("猫猫猫")
+
+    cat_tokens = [t for t in result.tokens if t.surface == "猫"]
+    assert len(cat_tokens) == 3
+    assert [(t.start, t.end) for t in cat_tokens] == [(0, 1), (1, 2), (2, 3)]
+    for token in result.tokens:
+        assert result.text[token.start:token.end] == token.surface
