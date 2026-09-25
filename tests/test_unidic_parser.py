@@ -2,7 +2,7 @@ import pytest
 
 from romanizer_core.analyzer.schema import UNIDIC_CWJ_202512_SCHEMA
 from romanizer_core.analyzer.unidic import RawToken, UniDicParser
-from romanizer_core.exceptions import UnsupportedUniDicSchemaError
+from romanizer_core.exceptions import InvalidUnknownFeatureError, UnsupportedUniDicSchemaError
 
 WAGAHAI_FEATURE = (
     "代名詞,*,*,*,*,*,ワガハイ,我が輩,吾輩,ワガハイ,吾輩,ワガハイ,混,*,*,*,*,*,*,"
@@ -16,6 +16,7 @@ NEKO_FEATURE = (
     "名詞,普通名詞,一般,*,*,*,ネコ,猫,猫,ネコ,猫,ネコ,和,*,*,*,*,*,*,"
     "体,ネコ,ネコ,ネコ,ネコ,1,C4,*,7918141678166528,28806"
 )
+PYTHON_UNKNOWN_FEATURE = "名詞,普通名詞,一般,*,*,*"
 
 
 @pytest.fixture
@@ -79,3 +80,38 @@ def test_parse_known_raises_on_field_count_mismatch(parser):
 
     assert exc_info.value.expected == 29
     assert exc_info.value.actual == 28
+
+
+def test_parse_unknown_sets_is_unknown_and_nulls_lexical_fields(parser):
+    raw = RawToken(id="t2", surface="Python", start=0, end=6, is_unknown=True, feature=PYTHON_UNKNOWN_FEATURE)
+
+    token = parser.parse_unknown(raw)
+
+    assert token.is_unknown is True
+    assert token.pos == ("名詞", "普通名詞", "一般")
+    assert token.lemma is None
+    assert token.lemma_reading is None
+    assert token.kana is None
+    assert token.pronunciation is None
+    assert token.orth is None
+    assert token.form is None
+    assert token.form_base is None
+    assert token.word_type is None
+
+
+def test_parse_unknown_raises_when_feature_too_short(parser):
+    raw = RawToken(id="t2", surface="Python", start=0, end=6, is_unknown=True, feature="名詞,普通名詞")
+
+    with pytest.raises(InvalidUnknownFeatureError) as exc_info:
+        parser.parse_unknown(raw)
+
+    assert exc_info.value.expected_at_least == 6
+    assert exc_info.value.actual == 2
+
+
+def test_parse_dispatches_to_known_or_unknown(parser):
+    known_raw = RawToken(id="t0", surface="猫", start=0, end=1, is_unknown=False, feature=NEKO_FEATURE)
+    unknown_raw = RawToken(id="t1", surface="Python", start=2, end=8, is_unknown=True, feature=PYTHON_UNKNOWN_FEATURE)
+
+    assert parser.parse(known_raw).is_unknown is False
+    assert parser.parse(unknown_raw).is_unknown is True

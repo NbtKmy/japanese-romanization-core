@@ -2,7 +2,11 @@ import csv
 from dataclasses import dataclass
 from io import StringIO
 
-from ..exceptions import UniDicFeatureParseError, UnsupportedUniDicSchemaError
+from ..exceptions import (
+    InvalidUnknownFeatureError,
+    UniDicFeatureParseError,
+    UnsupportedUniDicSchemaError,
+)
 from ..models.token import Token
 from .schema import UniDicSchema
 
@@ -77,3 +81,46 @@ class UniDicParser:
             form_base=_optional(values["formBase"]),
             word_type=_optional(values["goshu"]),
         )
+
+    def parse_unknown(self, raw: RawToken) -> Token:
+        fields = _parse_csv_feature(raw.feature)
+        expected = self._schema.unknown_fields
+
+        if len(fields) < len(expected):
+            raise InvalidUnknownFeatureError(
+                expected_at_least=len(expected),
+                actual=len(fields),
+                surface=raw.surface,
+                feature=raw.feature,
+            )
+
+        values = dict(zip(expected, fields[: len(expected)], strict=True))
+
+        return Token(
+            id=raw.id,
+            surface=raw.surface,
+            start=raw.start,
+            end=raw.end,
+            is_unknown=True,
+            lemma=None,
+            lemma_reading=None,
+            pos=_normalize_pos(
+                values.get("pos1"),
+                values.get("pos2"),
+                values.get("pos3"),
+                values.get("pos4"),
+            ),
+            conjugation_type=_optional(values.get("cType")),
+            conjugation_form=_optional(values.get("cForm")),
+            orth=None,
+            kana=None,
+            pronunciation=None,
+            form=None,
+            form_base=None,
+            word_type=None,
+        )
+
+    def parse(self, raw: RawToken) -> Token:
+        if raw.is_unknown:
+            return self.parse_unknown(raw)
+        return self.parse_known(raw)
