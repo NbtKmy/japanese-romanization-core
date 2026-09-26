@@ -13,7 +13,7 @@ _VOWELS = {"a", "i", "u", "e", "o"}
 _LONE_VOWEL_KANA = {"あ": "a", "い": "i", "う": "u", "え": "e", "お": "o"}
 
 
-def _sokuon_prefix(next_romaji: str) -> str:
+def sokuon_prefix(next_romaji: str) -> str:
     if next_romaji.startswith("ch"):
         return "t"
     return next_romaji[:1]
@@ -114,7 +114,7 @@ class KanaRomanizer:
                     pending_sokuon = True
                 else:
                     _, next_romaji = lookahead
-                    out.append(_sokuon_prefix(next_romaji))
+                    out.append(sokuon_prefix(next_romaji))
                     # Do not consume the following mora here; let the next
                     # loop iteration process it through the normal path so
                     # its romaji/last_vowel bookkeeping happens exactly once.

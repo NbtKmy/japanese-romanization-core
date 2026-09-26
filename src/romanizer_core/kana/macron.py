@@ -11,3 +11,5 @@ MACRON: dict[str, str] = {
     "e": "ē",
     "o": "ō",
 }
+
+MACRON_TO_VOWEL: dict[str, str] = {macron: vowel for vowel, macron in MACRON.items()}
