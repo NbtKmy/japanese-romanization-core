@@ -30,3 +30,19 @@ def test_end_to_end_analysis_via_public_api(dictionary_path):
     data = analysis_to_dict(result)
     assert data["text"] == "吾輩は猫である"
     assert data["tokens"][0]["surface"] == "吾輩"
+
+
+def test_phase3_pipeline_types_are_importable_from_root():
+    from romanizer_core import (
+        ContextResolver,
+        LongVowelResolver,
+        Renderer,
+        RomanizedToken,
+        TokenRomanizer,
+    )
+
+    assert ContextResolver is not None
+    assert LongVowelResolver is not None
+    assert Renderer is not None
+    assert RomanizedToken is not None
+    assert TokenRomanizer is not None
