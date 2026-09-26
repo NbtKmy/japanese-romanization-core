@@ -31,14 +31,19 @@ def test_result_tokens_and_romanized_tokens_are_aligned(dictionary_path):
         assert romanized_token.token_id == token.id
 
 
-def test_romanization_scheme_matches_the_kana_scheme_actually_used(dictionary_path):
-    from romanizer_core.kana.scheme import MODIFIED_HEPBURN_V1
-
+def test_romanization_scheme_is_the_stable_modified_hepburn_v1_identifier(
+    dictionary_path,
+):
+    # Pinned as literal strings, not derived from MODIFIED_HEPBURN_V1: the
+    # public RomanizationScheme identifier must stay stable even if the
+    # internal KanaSchemeDefinition's own name/version ever change
+    # (docs/superpowers/specs/2026-09-26-phase4-public-api-design.md §3.1).
+    # Deriving one from the other would make this assertion a tautology.
     romanizer = Romanizer.modified_hepburn(_build_analyzer(dictionary_path))
     result = romanizer.romanize("猫")
 
-    assert result.romanization_scheme.name == MODIFIED_HEPBURN_V1.name
-    assert result.romanization_scheme.version == MODIFIED_HEPBURN_V1.version
+    assert result.romanization_scheme.name == "modified_hepburn"
+    assert result.romanization_scheme.version == "1"
 
 
 def test_empty_string_romanizes_to_empty_result(dictionary_path):

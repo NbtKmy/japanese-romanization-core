@@ -19,8 +19,8 @@ uv sync
 ## UniDic辞書の準備
 
 本パッケージはUniDic辞書のダウンロード・配置を行わない。国立国語研究所配布の
-UniDic-CWJ辞書を別途用意し、パスを明示的に渡す。詳細は `analyzer_interfaces.md` の
-`DictionaryConfig` を参照。
+UniDic-CWJ辞書を別途用意し、`DictionaryConfig(path=..., name=..., version=...)` で
+パスを明示的に渡す（下のQuick start参照）。
 
 ## Quick start
 
@@ -120,8 +120,9 @@ text -> MeCabAnalyzer.analyze() -> AnalysisResult (Token[])
 ```
 
 `Romanizer.romanize()` はこの3段を1回の呼び出しにまとめ、`RomanizationResult` を返す。
-詳細は `romanizer-core_plan.md`（全体計画）と `kana_romanizer_spec.md`（kana→romaji変換層の
-仕様）を参照。
+各層の詳細な契約は `src/romanizer_core/` 配下の各モジュールのdocstringを参照。
+公開APIの設計判断は
+`docs/superpowers/specs/2026-09-26-phase4-public-api-design.md` にまとめてある。
 
 ## Acknowledgements
 

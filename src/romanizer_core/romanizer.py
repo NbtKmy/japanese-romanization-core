@@ -37,9 +37,10 @@ class Romanizer:
                 long_vowel_resolver=LongVowelResolver(),
             ),
             renderer=Renderer(),
-            scheme=RomanizationScheme(
-                name=MODIFIED_HEPBURN_V1.name, version=MODIFIED_HEPBURN_V1.version
-            ),
+            # Hardcoded, not derived from MODIFIED_HEPBURN_V1.name/.version:
+            # this public identifier must stay stable even if the internal
+            # KanaSchemeDefinition's own name/version ever change (spec §3.1).
+            scheme=RomanizationScheme(name="modified_hepburn", version="1"),
         )
 
     def romanize(self, text: str) -> RomanizationResult:
