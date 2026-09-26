@@ -1,4 +1,5 @@
 import os
+import shlex
 from pathlib import Path
 
 import MeCab
@@ -40,7 +41,27 @@ def _resolve_span(*, text: str, surface: str, cursor: int) -> tuple[int, int]:
     return start, start + len(surface)
 
 
+def build_mecab_args(*, rc_path: str, dictionary_path: Path) -> str:
+    """Build the MeCab option string for ``MeCab.Tagger``.
+
+    Both ``rc_path`` and ``dictionary_path`` are individually shell-quoted
+    with ``shlex.quote`` before being joined, so this is safe for paths
+    containing spaces, double quotes, or other shell-special characters
+    (mecab-python3 parses the resulting string with ``shlex.split``).
+    """
+    return f"-r {shlex.quote(rc_path)} -d {shlex.quote(str(dictionary_path))}"
+
+
 class MeCabAnalyzer:
+    """Wraps a MeCab tagger bound to a specific UniDic dictionary.
+
+    An instance is NOT thread-safe: create one analyzer per worker/thread
+    rather than sharing an instance across threads. Construction validates
+    the configured dictionary path and initializes the underlying MeCab
+    tagger eagerly, so a misconfigured dictionary fails fast at
+    construction time rather than on the first call to :meth:`analyze`.
+    """
+
     def __init__(
         self,
         config: MeCabAnalyzerConfig,
@@ -65,7 +86,7 @@ class MeCabAnalyzer:
         self._info = self._build_analyzer_info()
 
     def _create_tagger(self, dictionary_path: Path) -> MeCab.Tagger:
-        args = f'-r {os.devnull} -d "{dictionary_path}"'
+        args = build_mecab_args(rc_path=os.devnull, dictionary_path=dictionary_path)
         try:
             return MeCab.Tagger(args)
         except RuntimeError as exc:
@@ -86,11 +107,26 @@ class MeCabAnalyzer:
 
     @property
     def info(self) -> AnalyzerInfo:
+        """Read-only info about this analyzer and its dictionary."""
         return self._info
 
     def analyze(self, text: str) -> AnalysisResult:
+        """Analyze ``text`` into a tuple of :class:`Token`\\ s.
+
+        For every returned token, the span invariant
+        ``text[token.start:token.end] == token.surface`` holds; ``start``
+        and ``end`` are Python Unicode code-point indices into ``text``
+        (not MeCab byte offsets). An empty string input returns an
+        ``AnalysisResult`` with no tokens without raising. Text containing
+        a NUL character (``"\\x00"``) raises :class:`AnalysisError`, since
+        MeCab's underlying C-string layer would otherwise silently
+        truncate the input at the NUL.
+        """
         if not isinstance(text, str):
             raise TypeError("text must be str")
+
+        if "\x00" in text:
+            raise AnalysisError("text must not contain NUL characters")
 
         if text == "":
             return AnalysisResult(text=text, analyzer=self.info, tokens=())

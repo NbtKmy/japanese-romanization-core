@@ -1,43 +1,60 @@
+"""Exception hierarchy for romanizer_core.
+
+All exceptions raised by this package's public API derive from
+``RomanizerCoreError``, so callers can catch that single type to handle
+any failure originating in romanizer_core. Leaf exceptions below indicate
+more specific causes: configuration/setup problems (dictionary path
+issues, mismatched schemas), MeCab initialization failures, and errors
+encountered while analyzing text (span resolution, UniDic feature
+parsing).
+"""
+
 from pathlib import Path
 
 
 class RomanizerCoreError(Exception):
-    pass
+    """Root of the romanizer_core exception hierarchy; catch this to handle any package error."""
 
 
 class AnalyzerError(RomanizerCoreError):
-    pass
+    """Base class for errors raised by the analyzer layer (configuration, dictionary, or analysis failures)."""
 
 
 class AnalyzerConfigurationError(AnalyzerError):
-    pass
+    """Raised when an analyzer is misconfigured, e.g. a supplied parser's schema does not match the dictionary's schema."""
 
 
 class DictionaryError(AnalyzerError):
-    pass
+    """Base class for errors about the configured dictionary path."""
 
 
 class DictionaryNotFoundError(DictionaryError):
+    """Raised when the configured dictionary path does not exist."""
+
     def __init__(self, path: Path) -> None:
         self.path = path
         super().__init__(f"Dictionary not found: {path}")
 
 
 class InvalidDictionaryError(DictionaryError):
+    """Raised when the configured dictionary path exists but is not a directory."""
+
     def __init__(self, path: Path) -> None:
         self.path = path
         super().__init__(f"Invalid dictionary directory: {path}")
 
 
 class MeCabInitializationError(AnalyzerError):
-    pass
+    """Raised when the underlying MeCab tagger fails to initialize (e.g. an unusable dictionary)."""
 
 
 class AnalysisError(AnalyzerError):
-    pass
+    """Raised when analyzing text fails, including invalid input (e.g. embedded NUL characters) or unexpected MeCab errors."""
 
 
 class SpanResolutionError(AnalysisError):
+    """Raised when a token's surface form cannot be located in the original text from the current cursor position."""
+
     def __init__(self, *, surface: str, cursor: int) -> None:
         self.surface = surface
         self.cursor = cursor
@@ -47,16 +64,20 @@ class SpanResolutionError(AnalysisError):
 
 
 class UniDicError(AnalyzerError):
-    pass
+    """Base class for errors parsing UniDic node features."""
 
 
 class UniDicFeatureParseError(UniDicError):
+    """Raised when a raw MeCab node feature string cannot be parsed as CSV."""
+
     def __init__(self, raw_feature: str) -> None:
         self.raw_feature = raw_feature
         super().__init__(f"Failed to parse UniDic feature as CSV: {raw_feature!r}")
 
 
 class UnsupportedUniDicSchemaError(UniDicError):
+    """Raised when a known-node feature's field count doesn't match the configured schema, or the schema id is unrecognized."""
+
     def __init__(
         self,
         schema_id: str,
@@ -82,6 +103,8 @@ class UnsupportedUniDicSchemaError(UniDicError):
 
 
 class InvalidUnknownFeatureError(UniDicError):
+    """Raised when an unknown-node feature has fewer fields than the schema's unknown-node field set requires."""
+
     def __init__(
         self,
         *,

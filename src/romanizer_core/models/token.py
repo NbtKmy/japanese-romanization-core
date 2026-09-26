@@ -3,6 +3,14 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class Token:
+    """One morpheme produced by analyzing a piece of text.
+
+    ``is_unknown=True`` marks an out-of-vocabulary token (not found in the
+    dictionary); in that case the lexical fields (``lemma``,
+    ``lemma_reading``, ``orth``, ``kana``, ``pronunciation``, ``form``,
+    ``form_base``, ``word_type``) are set to ``None`` rather than guessed.
+    """
+
     id: str
 
     # Original input

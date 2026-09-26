@@ -1,8 +1,14 @@
+import shlex
+
 import pytest
 
 from romanizer_core.analyzer.config import DictionaryConfig, MeCabAnalyzerConfig
-from romanizer_core.analyzer.mecab import MeCabAnalyzer
-from romanizer_core.exceptions import DictionaryNotFoundError, InvalidDictionaryError
+from romanizer_core.analyzer.mecab import MeCabAnalyzer, build_mecab_args
+from romanizer_core.exceptions import (
+    AnalysisError,
+    DictionaryNotFoundError,
+    InvalidDictionaryError,
+)
 
 
 def test_analyzer_initializes_and_reports_info(dictionary_path):
@@ -17,6 +23,15 @@ def test_analyzer_initializes_and_reports_info(dictionary_path):
     assert analyzer.info.dictionary.name == "unidic-cwj"
     assert analyzer.info.dictionary.version == "202512"
     assert analyzer.info.dictionary.schema_id == "unidic-cwj-202512-29"
+
+
+def test_build_mecab_args_quotes_dictionary_path_containing_double_quote(tmp_path):
+    dictionary_path = tmp_path / 'weird"name'
+
+    args = build_mecab_args(rc_path="/dev/null", dictionary_path=dictionary_path)
+
+    parsed = shlex.split(args)
+    assert parsed == ["-r", "/dev/null", "-d", str(dictionary_path)]
 
 
 def test_analyzer_raises_dictionary_not_found_for_missing_path(tmp_path):
@@ -80,6 +95,13 @@ def test_analyze_empty_string_returns_no_tokens(dictionary_path):
 
     assert result.text == ""
     assert result.tokens == ()
+
+
+def test_analyze_raises_analysis_error_for_nul_character(dictionary_path):
+    analyzer = _build_analyzer(dictionary_path)
+
+    with pytest.raises(AnalysisError):
+        analyzer.analyze("猫\x00犬")
 
 
 def test_analyze_whitespace_only_preserves_text(dictionary_path):

@@ -24,6 +24,7 @@ def _token_to_dict(token: Token) -> dict[str, object]:
 
 
 def analysis_to_dict(result: AnalysisResult) -> dict[str, object]:
+    """Convert an ``AnalysisResult`` to a plain, JSON-serializable dict matching the package's documented JSON shape."""
     return {
         "text": result.text,
         "analyzer": {
