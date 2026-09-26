@@ -43,7 +43,7 @@ class Renderer:
             suppress_space_before_next = rtoken.fuses_with_next or is_opening_punctuation
 
         text = "".join(parts)
-        return text[0].upper() + text[1:] if text else text
+        return _capitalize_first_letter(text)
 
 
 def _is_symbol(token: Token) -> bool:
@@ -52,3 +52,10 @@ def _is_symbol(token: Token) -> bool:
 
 def _is_open_bracket(token: Token) -> bool:
     return len(token.pos) > 1 and token.pos[1] == _OPEN_BRACKET_POS2
+
+
+def _capitalize_first_letter(text: str) -> str:
+    for i, char in enumerate(text):
+        if char.isalpha():
+            return text[:i] + char.upper() + text[i + 1 :]
+    return text

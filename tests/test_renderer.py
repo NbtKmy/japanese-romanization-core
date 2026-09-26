@@ -69,7 +69,19 @@ def test_opening_bracket_has_no_trailing_space():
         RomanizedToken(token_id="t1", romaji="neko", source="kana"),
         RomanizedToken(token_id="t2", romaji="」", source="orth"),
     ]
-    assert renderer.render(tokens, romanized) == "「neko」"
+    assert renderer.render(tokens, romanized) == "「Neko」"
+
+
+def test_capitalizes_first_letter_even_when_first_token_is_punctuation():
+    tokens = [
+        _token(id="t0", pos=("補助記号", "括弧開")),
+        _token(id="t1", pos=("名詞",)),
+    ]
+    romanized = [
+        RomanizedToken(token_id="t0", romaji="「", source="orth"),
+        RomanizedToken(token_id="t1", romaji="neko", source="kana"),
+    ]
+    assert renderer.render(tokens, romanized) == "「Neko"
 
 
 def test_fuses_with_next_suppresses_space():
