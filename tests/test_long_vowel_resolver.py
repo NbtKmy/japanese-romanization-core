@@ -54,6 +54,35 @@ def test_reverts_ou_contraction_mid_word_for_godan_verb_sasou():
     assert result.text == "sasou"
 
 
+def test_does_not_revert_ou_contraction_for_volitional_form_ikou():
+    # 行こう (ikō, 意志推量形/volitional "let's go"): a genuine chōonpu, not
+    # the verb's dictionary-final う. Real UniDic tokenizes this as ONE
+    # token (cType=五段-カ行, cForm=意志推量形, kana=イコウ) -- the same
+    # kana-ends-in-ウ shape as 問う, but here the contraction is correct
+    # and must not be reverted.
+    token = Token(
+        id="t0",
+        surface="行こう",
+        start=0,
+        end=3,
+        is_unknown=False,
+        lemma="行く",
+        lemma_reading="イク",
+        pos=("動詞", "非自立可能"),
+        conjugation_type="五段-カ行",
+        conjugation_form="意志推量形",
+        orth="行こう",
+        kana="イコウ",
+        pronunciation="イコー",
+        form="イコウ",
+        form_base="イコウ",
+        word_type="和",
+    )
+    kr = KanaRomanization(text="ikō", final_vowel="ō")
+    result = resolver.resolve(token=token, kana_romanization=kr)
+    assert result is kr
+
+
 def test_noop_when_no_contraction_happened_kau():
     # 買う (kau): あ+う never contracts, final_vowel is plain "u"; nothing to revert.
     token = _godan_verb_token(kana="カウ")

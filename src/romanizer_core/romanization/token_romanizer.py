@@ -17,6 +17,7 @@ _PARTICLE_OVERRIDES: dict[tuple[str, str], str] = {
     ("ヘ", "エ"): "e",
     ("ヲ", "オ"): "o",
 }
+_HATSUONBIN_MARKER = "撥音便"
 
 
 class TokenRomanizer:
@@ -35,9 +36,11 @@ class TokenRomanizer:
             _initial_romanization(token, self._kana_romanizer) for token in tokens
         ]
         pre_context = [kr for kr, _source in initial]
-        had_pending = [
-            kr is not None and (kr.pending_sokuon or kr.pending_syllabic_n)
-            for kr in pre_context
+        had_pending_sokuon = [
+            kr is not None and kr.pending_sokuon for kr in pre_context
+        ]
+        had_pending_syllabic_n = [
+            kr is not None and kr.pending_syllabic_n for kr in pre_context
         ]
 
         resolved = self._context_resolver.resolve(pre_context)
@@ -60,8 +63,19 @@ class TokenRomanizer:
                 else:
                     romaji = kr.text
 
+            # Sokuon always fuses with a real next token: っ physically
+            # borrows the next mora's initial consonant, so the two are
+            # never independent words (only verb conjugation forms like
+            # 促音便 end in っ). Moraic ん is different -- ordinary complete
+            # words routinely end in ん (日本, 缶, ...) and are followed by
+            # a particle with a normal space ("Nippon wa", "kan o"), so
+            # fusion is only correct for the same kind of bound
+            # conjugational form (撥音便 verb stems, e.g. 読ん+だ -> yonda).
             next_kr = resolved[i + 1] if i + 1 < len(resolved) else None
-            fuses_with_next = had_pending[i] and next_kr is not None
+            fuses_with_next = next_kr is not None and (
+                had_pending_sokuon[i]
+                or (had_pending_syllabic_n[i] and _is_hatsuonbin(token))
+            )
 
             results.append(
                 RomanizedToken(
@@ -92,6 +106,13 @@ def _literal_text(token: Token, source: str) -> str:
         assert token.orth is not None
         return token.orth
     return token.surface
+
+
+def _is_hatsuonbin(token: Token) -> bool:
+    return (
+        token.conjugation_form is not None
+        and _HATSUONBIN_MARKER in token.conjugation_form
+    )
 
 
 def _particle_override(token: Token) -> str | None:

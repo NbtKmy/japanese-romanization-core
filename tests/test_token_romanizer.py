@@ -142,6 +142,56 @@ def test_absolute_final_sokuon_does_not_fuse():
     assert result[0].fuses_with_next is False
 
 
+def test_moraic_n_noun_particle_boundary_does_not_fuse():
+    # 日本(ニッポン)+は: separate noun+particle words. Standard romanization
+    # keeps a space ("Nippon wa"), even though ContextResolver resolved a
+    # pending moraic n. Real UniDic features: 日本 has no conjugation_type
+    # (it's a noun, not a 撥音便 verb stem), so fusion must not fire.
+    romanizer = _make_romanizer()
+    noun = _token(
+        id="t0",
+        surface="日本",
+        pos=("名詞", "固有名詞"),
+        conjugation_type=None,
+        conjugation_form=None,
+        kana="ニッポン",
+    )
+    particle = _token(
+        id="t1", surface="は", pos=("助詞", "係助詞"), kana="ハ", pronunciation="ワ"
+    )
+    result = romanizer.romanize([noun, particle])
+    assert result[0].romaji == "nippon"
+    assert result[0].fuses_with_next is False
+    assert result[1].romaji == "wa"
+
+
+def test_moraic_n_hatsuonbin_verb_stem_fuses_with_next():
+    # 読ん(連用形-撥音便)+だ: verb stem + past auxiliary, tightly bound
+    # (real UniDic tokenization splits 読んだ into exactly these two
+    # tokens). Must render "yonda" with no space, like the sokuon case.
+    romanizer = _make_romanizer()
+    stem = _token(
+        id="t0",
+        surface="読ん",
+        pos=("動詞", "一般"),
+        conjugation_type="五段-マ行",
+        conjugation_form="連用形-撥音便",
+        kana="ヨン",
+    )
+    auxiliary = _token(
+        id="t1",
+        surface="だ",
+        pos=("助動詞",),
+        conjugation_type="助動詞-タ",
+        conjugation_form="終止形-一般",
+        kana="ダ",
+    )
+    result = romanizer.romanize([stem, auxiliary])
+    assert result[0].romaji == "yon"
+    assert result[0].fuses_with_next is True
+    assert result[1].romaji == "da"
+
+
 def test_godan_verb_long_vowel_correction_applies_in_full_pipeline():
     romanizer = _make_romanizer()
     token = _token(

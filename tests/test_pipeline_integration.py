@@ -66,11 +66,44 @@ def test_godan_verb_final_u_is_never_treated_as_a_choonpu(
     assert _romanize(analyzer, token_romanizer, renderer, verb_text) == expected
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # 撥音便 (verb stem + auxiliary): tightly bound, no space.
+        ("読んだ", "Yonda"),
+        ("飲んだ", "Nonda"),
+        # noun/particle boundary with a token-final ん: separate words,
+        # must keep the space (regression for the over-fusion bug).
+        ("日本は島国です。", "Nippon wa shimaguni desu。"),
+        ("本を読む", "Hon o yomu"),
+        ("缶を開ける", "Kan o akeru"),
+        # 意志推量形 (volitional): genuine chōonpu, must not be reverted
+        # by the godan-verb-final-u rule (regression for that bug).
+        ("行こう", "Ikō"),
+        ("言おう", "Iō"),
+        # 空白 token between two proper nouns: single separator, not the
+        # literal full-width space character.
+        ("山田　太郎", "Yamada tarō"),
+        # 外来語 (loanword) carried through a full sentence.
+        ("パーティーへ行く", "Pātī e iku"),
+        # leading numeral: sentence-initial capitalization must not hunt
+        # past it into the next word.
+        ("1000円です。", "1000 en desu。"),
+    ],
+)
+def test_full_pipeline_regression_fixtures_from_final_review(
+    dictionary_path, text, expected
+):
+    analyzer, token_romanizer, renderer = _build_pipeline(dictionary_path)
+    assert _romanize(analyzer, token_romanizer, renderer, text) == expected
+
+
 def test_known_compound_lexical_boundary_limitation_is_documented(dictionary_path):
     # 小躍り (koodori) is a documented v1 limitation: KanaRomanizer's default
-    # same-vowel contraction fires and LongVowelResolver has no compound-
-    # boundary information to revert it (kana_romanizer_spec.md §44). This
-    # test pins the *current* (known-imperfect) behavior so a future fix is
-    # a deliberate, visible change rather than a silent regression.
+    # same-vowel contraction fires, and LongVowelResolver has no rule for
+    # compound-noun lexical boundaries, so it leaves the result as-is
+    # (kōdori) rather than reverting to the correct koodori. This test pins
+    # the *current* (known-imperfect) behavior so a future fix is a
+    # deliberate, visible change rather than a silent regression.
     analyzer, token_romanizer, renderer = _build_pipeline(dictionary_path)
     assert _romanize(analyzer, token_romanizer, renderer, "小躍り") == "Kōdori"

@@ -93,6 +93,62 @@ def test_fuses_with_next_suppresses_space():
     assert renderer.render(tokens, romanized) == "Itta"
 
 
+def test_capitalizes_first_letter_of_each_sentence_after_a_period():
+    tokens = [
+        _token(id="t0", pos=("名詞",)),
+        _token(id="t1", pos=("助動詞",)),
+        _token(id="t2", pos=("補助記号", "句点")),
+        _token(id="t3", pos=("名詞",)),
+        _token(id="t4", pos=("助動詞",)),
+        _token(id="t5", pos=("補助記号", "句点")),
+    ]
+    romanized = [
+        RomanizedToken(token_id="t0", romaji="neko", source="kana"),
+        RomanizedToken(token_id="t1", romaji="da", source="kana"),
+        RomanizedToken(token_id="t2", romaji="。", source="orth"),
+        RomanizedToken(token_id="t3", romaji="inu", source="kana"),
+        RomanizedToken(token_id="t4", romaji="da", source="kana"),
+        RomanizedToken(token_id="t5", romaji="。", source="orth"),
+    ]
+    assert renderer.render(tokens, romanized) == "Neko da。 Inu da。"
+
+
+def test_does_not_capitalize_past_a_leading_digit_token():
+    # "1000円です。" -- the sentence-initial position is occupied by a
+    # digit token, which has no case; the following word must not be
+    # capitalized just because it happens to be the first *letter*.
+    tokens = [
+        _token(id="t0", pos=("名詞", "数詞")),
+        _token(id="t1", pos=("名詞",)),
+        _token(id="t2", pos=("助動詞",)),
+        _token(id="t3", pos=("補助記号", "句点")),
+    ]
+    romanized = [
+        RomanizedToken(token_id="t0", romaji="1000", source="surface"),
+        RomanizedToken(token_id="t1", romaji="en", source="kana"),
+        RomanizedToken(token_id="t2", romaji="desu", source="kana"),
+        RomanizedToken(token_id="t3", romaji="。", source="orth"),
+    ]
+    assert renderer.render(tokens, romanized) == "1000 en desu。"
+
+
+def test_whitespace_token_becomes_a_single_separator_not_literal_text():
+    # 山田　太郎 -- a UniDic 空白 token between two name tokens must not
+    # render its literal full-width space character with extra spaces
+    # stacked around it.
+    tokens = [
+        _token(id="t0", pos=("名詞", "固有名詞")),
+        _token(id="t1", pos=("空白",)),
+        _token(id="t2", pos=("名詞", "固有名詞")),
+    ]
+    romanized = [
+        RomanizedToken(token_id="t0", romaji="yamada", source="kana"),
+        RomanizedToken(token_id="t1", romaji="　", source="orth"),
+        RomanizedToken(token_id="t2", romaji="tarō", source="kana"),
+    ]
+    assert renderer.render(tokens, romanized) == "Yamada tarō"
+
+
 def test_empty_romaji_token_is_skipped_without_extra_space():
     tokens = [
         _token(id="t0", pos=("名詞",)),
