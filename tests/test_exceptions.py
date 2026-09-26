@@ -8,13 +8,16 @@ from romanizer_core.exceptions import (
     AnalyzerError,
     DictionaryError,
     DictionaryNotFoundError,
+    DuplicateKanaMappingError,
     InvalidDictionaryError,
     InvalidUnknownFeatureError,
+    KanaError,
     MeCabInitializationError,
     RomanizerCoreError,
     SpanResolutionError,
     UniDicError,
     UniDicFeatureParseError,
+    UnknownKanaSchemeError,
     UnsupportedUniDicSchemaError,
 )
 
@@ -33,6 +36,9 @@ def test_hierarchy_roots_at_romanizer_core_error():
         UniDicFeatureParseError,
         UnsupportedUniDicSchemaError,
         InvalidUnknownFeatureError,
+        KanaError,
+        DuplicateKanaMappingError,
+        UnknownKanaSchemeError,
     ):
         assert issubclass(exc_type, RomanizerCoreError)
 
@@ -90,3 +96,20 @@ def test_invalid_unknown_feature_error_reports_counts():
     assert error.actual == 2
     assert "6" in str(error)
     assert "2" in str(error)
+
+
+def test_duplicate_kana_mapping_error_reports_key_and_sources():
+    error = DuplicateKanaMappingError("あ", sources=("base_mapping", "modern_extensions"))
+    assert error.key == "あ"
+    assert error.sources == ("base_mapping", "modern_extensions")
+    assert "あ" in str(error)
+    assert "base_mapping" in str(error)
+    assert "modern_extensions" in str(error)
+
+
+def test_unknown_kana_scheme_error_reports_name_and_version():
+    error = UnknownKanaSchemeError("modified_hepburn", "999")
+    assert error.name == "modified_hepburn"
+    assert error.version == "999"
+    assert "modified_hepburn" in str(error)
+    assert "999" in str(error)

@@ -4,9 +4,10 @@ All exceptions raised by this package's public API derive from
 ``RomanizerCoreError``, so callers can catch that single type to handle
 any failure originating in romanizer_core. Leaf exceptions below indicate
 more specific causes: configuration/setup problems (dictionary path
-issues, mismatched schemas), MeCab initialization failures, and errors
+issues, mismatched schemas), MeCab initialization failures, errors
 encountered while analyzing text (span resolution, UniDic feature
-parsing).
+parsing), and kana romanization scheme errors (duplicate mapping keys,
+unknown scheme lookups).
 """
 
 from pathlib import Path
@@ -122,3 +123,28 @@ class InvalidUnknownFeatureError(UniDicError):
             f"{expected_at_least} fields, got {actual} for surface {surface!r} "
             f"(feature={feature!r})"
         )
+
+
+class KanaError(RomanizerCoreError):
+    """Base class for errors raised by the kana romanization layer."""
+
+
+class DuplicateKanaMappingError(KanaError):
+    """Raised when the same kana key appears in more than one mapping table of a KanaSchemeDefinition."""
+
+    def __init__(self, key: str, *, sources: tuple[str, str]) -> None:
+        self.key = key
+        self.sources = sources
+        super().__init__(
+            f"Kana key {key!r} is defined in multiple mapping tables: "
+            f"{sources[0]!r} and {sources[1]!r}"
+        )
+
+
+class UnknownKanaSchemeError(KanaError):
+    """Raised when get_scheme() is called with an unregistered (name, version) pair."""
+
+    def __init__(self, name: str, version: str) -> None:
+        self.name = name
+        self.version = version
+        super().__init__(f"Unknown kana scheme: name={name!r}, version={version!r}")
