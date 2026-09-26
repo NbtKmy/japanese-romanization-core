@@ -283,3 +283,11 @@ unidic-cwj-202512/
 
 ## Superpowers subagent-driven-development scratch workspace
 .superpowers/
+
+## Local-only design/history docs (kept locally for background context,
+## not needed by the remote/published package)
+CLAUDE.md
+analyzer_interfaces.md
+kana_romanizer_spec.md
+mapping.md
+romanizer-core_plan.md
