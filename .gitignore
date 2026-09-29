@@ -294,3 +294,6 @@ analyzer_interfaces.md
 kana_romanizer_spec.md
 mapping.md
 romanizer-core_plan.md
+
+# Test files
+test.py
