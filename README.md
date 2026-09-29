@@ -135,3 +135,7 @@ text -> MeCabAnalyzer.analyze() -> AnalysisResult (Token[])
 The kana romanization implementation was informed in part by
 Cutlet by Paul O'Leary McCann:
 https://github.com/polm/cutlet
+
+このライブラリを作成するにあたり、Claude Codeを利用しています。
+
+
