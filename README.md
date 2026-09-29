@@ -6,13 +6,19 @@
 
 ## Install
 
+未PyPI公開のため、`uv add japanese-romanization-core` は使えない。以下のいずれかの方法を使う。
+
+Gitリポジトリを直接指定する場合:
+
 ```bash
-uv add japanese-romanization-core
+uv add git+https://github.com/NbtKmy/japanese-romanization-core.git
 ```
 
-または開発時:
+リポジトリをクローンして開発する場合:
 
 ```bash
+git clone https://github.com/NbtKmy/japanese-romanization-core.git
+cd japanese-romanization-core
 uv sync
 ```
 
